@@ -1,0 +1,66 @@
+NAME
+    namespace::clean - Keep imports out of your namespace
+
+VERSION
+    0.01
+
+SYNOPSIS
+      package Foo;
+      use warnings;
+      use strict;
+
+      use Carp qw(croak);   # will be removed
+
+      sub bar { 23 }        # will be removed
+
+      use namespace::clean;
+
+      sub baz { bar() }     # still defined, 'bar' still bound
+
+      ### Will print:
+      #   No
+      #   No
+      #   Yes
+      print +(__PACKAGE__->can('croak') ? 'Yes' : 'No'), "\n";
+      print +(__PACKAGE__->can('bar')   ? 'Yes' : 'No'), "\n";
+      print +(__PACKAGE__->can('baz')   ? 'Yes' : 'No'), "\n";
+
+      1;
+
+DESCRIPTION
+    When you define a function, or import one, into a Perl package, it will
+    naturally also be available as a method. This does not per se cause
+    problems, but it can complicate subclassing and, for example, plugin
+    classes that are included by loading them as base classes.
+
+    The "namespace::clean" pragma will remove all previously declared or
+    imported symbols at the end of the current package's compile cycle. This
+    means that functions are already bound by their name, and calls to them
+    still work. But they will not be available as methods on your class or
+    instances.
+
+METHODS
+    You shouldn't need to call any of these. Just "use" the package at the
+    appropriate place.
+
+  import
+    Makes a snapshot of the current defined functions and registers a
+    Filter::EOF cleanup routine to remove those symbols from the package at
+    the end of the compile-time.
+
+  get_functions
+    Takes a class as argument and returns all currently defined functions in
+    it as a hash reference with the function name as key and a typeglob
+    reference to the symbol as value.
+
+SEE ALSO
+    Filter::EOF
+
+AUTHOR AND COPYRIGHT
+    Robert 'phaylon' Sedlacek "<rs@474.at>", with many thanks to Matt S
+    Trout for the inspiration on the whole idea.
+
+LICENSE
+    This program is free software; you can redistribute it and/or modify it
+    under the same terms as perl itself.
+
