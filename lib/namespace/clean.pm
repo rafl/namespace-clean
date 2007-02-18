@@ -9,17 +9,18 @@ namespace::clean - Keep imports out of your namespace
 use warnings;
 use strict;
 
-use vars              qw( $VERSION );
+use vars              qw( $VERSION $STORAGE_VAR );
 use Symbol            qw( qualify_to_ref );
 use Filter::EOF;
 
 =head1 VERSION
 
-0.01
+0.02
 
 =cut
 
-$VERSION = 0.01;
+$VERSION     = 0.02;
+$STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
 
@@ -35,13 +36,21 @@ $VERSION = 0.01;
 
   sub baz { bar() }     # still defined, 'bar' still bound
 
+  no namespace::clean;
+
+  sub quux { baz() }    # will be removed again
+
+  use namespace::clean;
+
   ### Will print:
   #   No
   #   No
   #   Yes
+  #   No
   print +(__PACKAGE__->can('croak') ? 'Yes' : 'No'), "\n";
   print +(__PACKAGE__->can('bar')   ? 'Yes' : 'No'), "\n";
   print +(__PACKAGE__->can('baz')   ? 'Yes' : 'No'), "\n";
+  print +(__PACKAGE__->can('quux')  ? 'Yes' : 'No'), "\n";
 
   1;
 
@@ -76,16 +85,65 @@ sub import {
 
     my $cleanee   = caller;
     my $functions = $pragma->get_functions($cleanee);
+    my $store     = $pragma->get_class_store($cleanee);
     
-    Filter::EOF->on_eof_call(sub {
-        for my $f (keys %$functions) {
-            next unless $functions->{ $f } 
-                    and *{ $functions->{ $f } }{CODE};
-            {   no strict 'refs';
+    for my $f (keys %$functions) {
+        next unless    $functions->{ $f } 
+                and *{ $functions->{ $f } }{CODE};
+        $store->{remove}{ $f } = 1;
+    }
+
+    unless ($store->{handler_is_installed}) {
+        Filter::EOF->on_eof_call(sub {
+            for my $f (keys %{ $store->{remove} }) {
+                next if $store->{exclude}{ $f };
+                no strict 'refs';
                 delete ${ "${cleanee}::" }{ $f };
             }
-        }
-    });
+        });
+        $store->{handler_is_installed} = 1;
+    }
+
+    return 1;
+}
+
+=head2 unimport
+
+This method will be called when you do a
+
+  no namespace::clean;
+
+It will start a new section of code that defines functions to clean up.
+
+=cut
+
+sub unimport {
+    my ($pragma) = @_;
+
+    my $cleanee   = caller;
+    my $functions = $pragma->get_functions($cleanee);
+    my $store     = $pragma->get_class_store($cleanee);
+
+    for my $f (keys %$functions) {
+        next if $store->{remove}{ $f }
+             or $store->{exclude}{ $f };
+        $store->{exclude}{ $f } = 1;
+    }
+
+    return 1;
+}
+
+=head2 get_class_store
+
+This returns a reference to a hash in your package containing information
+about function names included and excluded from removal.
+
+=cut
+
+sub get_class_store {
+    my ($pragma, $class) = @_;
+    no strict 'refs';
+    return \%{ "${class}::${STORAGE_VAR}" };
 }
 
 =head2 get_functions

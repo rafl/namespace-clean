@@ -14,4 +14,4 @@ no_index:
 requires: 
   Filter::EOF: 0.02
   Symbol: 0
-version: 0.01
+version: 0.02

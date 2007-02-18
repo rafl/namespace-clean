@@ -2,7 +2,7 @@ NAME
     namespace::clean - Keep imports out of your namespace
 
 VERSION
-    0.01
+    0.02
 
 SYNOPSIS
       package Foo;
@@ -17,13 +17,21 @@ SYNOPSIS
 
       sub baz { bar() }     # still defined, 'bar' still bound
 
+      no namespace::clean;
+
+      sub quux { baz() }    # will be removed again
+
+      use namespace::clean;
+
       ### Will print:
       #   No
       #   No
       #   Yes
+      #   No
       print +(__PACKAGE__->can('croak') ? 'Yes' : 'No'), "\n";
       print +(__PACKAGE__->can('bar')   ? 'Yes' : 'No'), "\n";
       print +(__PACKAGE__->can('baz')   ? 'Yes' : 'No'), "\n";
+      print +(__PACKAGE__->can('quux')  ? 'Yes' : 'No'), "\n";
 
       1;
 
@@ -47,6 +55,17 @@ METHODS
     Makes a snapshot of the current defined functions and registers a
     Filter::EOF cleanup routine to remove those symbols from the package at
     the end of the compile-time.
+
+  unimport
+    This method will be called when you do a
+
+      no namespace::clean;
+
+    It will start a new section of code that defines functions to clean up.
+
+  get_class_store
+    This returns a reference to a hash in your package containing
+    information about function names included and excluded from removal.
 
   get_functions
     Takes a class as argument and returns all currently defined functions in

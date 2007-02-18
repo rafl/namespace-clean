@@ -15,8 +15,10 @@ README
 t/00-basic.t
 t/01-function-wipeout.t
 t/02-inheritance.t
+t/03-unimport.t
 t/10-pod.t
 t/11-pod-coverage.t
 t/lib/ExporterTest.pm
 t/lib/FunctionWipeout.pm
 t/lib/Inheritance.pm
+t/lib/Unimport.pm
