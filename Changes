@@ -1,4 +1,8 @@
 
+    [0.03] Sat Feb 24 22:34:55 CET 2007
+        - Minor comment and POD cleanups
+        - Tried to clarify how the module works
+
     [0.02] Tue Feb 20 00:38:24 CET 2007
         - Added unimport behaviour
 

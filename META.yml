@@ -1,4 +1,4 @@
-abstract: Keep imports out of your namespace
+abstract: Keep imports and functions out of your namespace
 author: Robert 'phaylon' Sedlacek <rs@474.at>
 build_requires: 
   FindBin: 0
@@ -14,4 +14,4 @@ no_index:
 requires: 
   Filter::EOF: 0.02
   Symbol: 0
-version: 0.02
+version: 0.03

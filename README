@@ -1,33 +1,32 @@
 NAME
-    namespace::clean - Keep imports out of your namespace
+    namespace::clean - Keep imports and functions out of your namespace
 
 VERSION
-    0.02
+    0.03
 
 SYNOPSIS
       package Foo;
       use warnings;
       use strict;
 
-      use Carp qw(croak);   # will be removed
+      use Carp qw(croak);   # 'croak' will be removed
 
-      sub bar { 23 }        # will be removed
+      sub bar { 23 }        # 'bar' will be removed
 
+      # remove all previously defined functions
       use namespace::clean;
 
-      sub baz { bar() }     # still defined, 'bar' still bound
+      sub baz { bar() }     # 'baz' still defined, 'bar' still bound
 
+      # begin to collection function names from here again
       no namespace::clean;
 
-      sub quux { baz() }    # will be removed again
+      sub quux { baz() }    # 'quux' will be removed
 
+      # remove all functions defined after the 'no' unimport
       use namespace::clean;
 
-      ### Will print:
-      #   No
-      #   No
-      #   Yes
-      #   No
+      # Will print: 'No', 'No', 'Yes' and 'No'
       print +(__PACKAGE__->can('croak') ? 'Yes' : 'No'), "\n";
       print +(__PACKAGE__->can('bar')   ? 'Yes' : 'No'), "\n";
       print +(__PACKAGE__->can('baz')   ? 'Yes' : 'No'), "\n";
@@ -39,13 +38,16 @@ DESCRIPTION
     When you define a function, or import one, into a Perl package, it will
     naturally also be available as a method. This does not per se cause
     problems, but it can complicate subclassing and, for example, plugin
-    classes that are included by loading them as base classes.
+    classes that are included via multiple inheritance by loading them as
+    base classes.
 
     The "namespace::clean" pragma will remove all previously declared or
-    imported symbols at the end of the current package's compile cycle. This
-    means that functions are already bound by their name, and calls to them
-    still work. But they will not be available as methods on your class or
-    instances.
+    imported symbols at the end of the current package's compile cycle.
+    Functions called in the package itself will still be bound by their
+    name, but they won't show up as methods on your class or instances.
+
+    By unimporting via "no" you can tell "namespace::clean" to start
+    collecting functions for the next "use namespace::clean;" specification.
 
 METHODS
     You shouldn't need to call any of these. Just "use" the package at the
@@ -53,8 +55,8 @@ METHODS
 
   import
     Makes a snapshot of the current defined functions and registers a
-    Filter::EOF cleanup routine to remove those symbols from the package at
-    the end of the compile-time.
+    Filter::EOF cleanup routine to remove those symbols at the end of the
+    compile-time.
 
   unimport
     This method will be called when you do a
@@ -64,13 +66,28 @@ METHODS
     It will start a new section of code that defines functions to clean up.
 
   get_class_store
-    This returns a reference to a hash in your package containing
+    This returns a reference to a hash in a passed package containing
     information about function names included and excluded from removal.
 
   get_functions
     Takes a class as argument and returns all currently defined functions in
     it as a hash reference with the function name as key and a typeglob
     reference to the symbol as value.
+
+IMPLEMENTATION DETAILS
+    This module works through the effect that a
+
+      delete $SomePackage::{foo};
+
+    will remove the "foo" symbol from $SomePackage for run time lookups
+    (e.g., method calls) but will leave the entry alive to be called by
+    already resolved names in the package itself.
+
+    A test file has been added to the perl core to ensure that this
+    behaviour will be stable in future releases.
+
+    Just for completeness sake, if you want to remove the symbol completely,
+    use "undef" instead.
 
 SEE ALSO
     Filter::EOF
