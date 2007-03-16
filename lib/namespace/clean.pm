@@ -15,11 +15,11 @@ use Filter::EOF;
 
 =head1 VERSION
 
-0.03
+0.04
 
 =cut
 
-$VERSION     = 0.03;
+$VERSION     = 0.04;
 $STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
@@ -69,6 +69,13 @@ name, but they won't show up as methods on your class or instances.
 By unimporting via C<no> you can tell C<namespace::clean> to start
 collecting functions for the next C<use namespace::clean;> specification.
 
+You can use the C<-except> flag to tell C<namespace::clean> that you
+don't want it to remove a certain function. A common use would be a 
+module exporting an C<import> method along with some functions:
+
+  use ModuleExportingImport;
+  use namespace::clean -except => [qw( import )];
+
 =head1 METHODS
 
 You shouldn't need to call any of these. Just C<use> the package at the
@@ -85,15 +92,18 @@ of the compile-time.
 =cut
 
 sub import {
-    my ($pragma) = @_;
+    my ($pragma, %args) = @_;
 
     # calling class, all current functions and our storage
     my $cleanee   = caller;
     my $functions = $pragma->get_functions($cleanee);
     my $store     = $pragma->get_class_store($cleanee);
-    
+
+    my %except    = map {( $_ => 1 )} @{ $args{ -except } || [] };
+
     # register symbols for removal, if they have a CODE entry
     for my $f (keys %$functions) {
+        next if     $except{ $f };
         next unless    $functions->{ $f } 
                 and *{ $functions->{ $f } }{CODE};
         $store->{remove}{ $f } = 1;
@@ -102,10 +112,23 @@ sub import {
     # register EOF handler on first call to import
     unless ($store->{handler_is_installed}) {
         Filter::EOF->on_eof_call(sub {
+          SYMBOL:
             for my $f (keys %{ $store->{remove} }) {
-                next if $store->{exclude}{ $f };
+
+                # ignore already removed symbols
+                next SYMBOL if $store->{exclude}{ $f };
                 no strict 'refs';
+
+                # keep original value to restore non-code slots
+                local *__tmp = *{ ${ "${cleanee}::" }{ $f } };
                 delete ${ "${cleanee}::" }{ $f };
+
+              SLOT:
+                # restore non-code slots to symbol
+                for my $t (qw( SCALAR ARRAY HASH IO FORMAT )) {
+                    next SLOT unless defined *__tmp{ $t };
+                    *{ "${cleanee}::$f" } = *__tmp{ $t };
+                }
             }
         });
         $store->{handler_is_installed} = 1;

@@ -2,7 +2,7 @@ NAME
     namespace::clean - Keep imports and functions out of your namespace
 
 VERSION
-    0.03
+    0.04
 
 SYNOPSIS
       package Foo;
@@ -48,6 +48,13 @@ DESCRIPTION
 
     By unimporting via "no" you can tell "namespace::clean" to start
     collecting functions for the next "use namespace::clean;" specification.
+
+    You can use the "-except" flag to tell "namespace::clean" that you don't
+    want it to remove a certain function. A common use would be a module
+    exporting an "import" method along with some functions:
+
+      use ModuleExportingImport;
+      use namespace::clean -except => [qw( import )];
 
 METHODS
     You shouldn't need to call any of these. Just "use" the package at the

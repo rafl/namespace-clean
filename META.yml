@@ -1,11 +1,15 @@
+--- 
 abstract: Keep imports and functions out of your namespace
 author: Robert 'phaylon' Sedlacek <rs@474.at>
 build_requires: 
   FindBin: 0
   Test::More: 0.62
 distribution_type: module
-generated_by: Module::Install version 0.64
+generated_by: Module::Install version 0.65
 license: perl
+meta-spec: 
+  url: http://module-build.sourceforge.net/META-spec-v1.3.html
+  version: 1.3
 name: namespace-clean
 no_index: 
   directory: 
@@ -14,4 +18,4 @@ no_index:
 requires: 
   Filter::EOF: 0.02
   Symbol: 0
-version: 0.03
+version: 0.04

@@ -1,4 +1,8 @@
 
+    [0.04] Sat Mar 17 16:22:10 CET 2007
+        - Added -except flag
+        - Non-CODE type slots will not be removed
+
     [0.03] Sat Feb 24 22:34:55 CET 2007
         - Minor comment and POD cleanups
         - Tried to clarify how the module works
