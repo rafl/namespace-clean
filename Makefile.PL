@@ -15,4 +15,16 @@ build_requires  q{FindBin},                     0;
 requires        q{Filter::EOF},                 '0.02';
 requires        q{Symbol},                      0;
 
+auto_provides;
+auto_install;
+
+if (-e 'MANIFEST.SKIP') {
+
+    print "Creating README file\n";
+    system 'pod2text lib/namespace/clean.pm > README';
+
+    print "Adding author tests to 'make test' run\n";
+    tests 't/*.t t_author/*.t';
+}
+
 WriteAll;

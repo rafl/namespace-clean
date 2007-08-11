@@ -15,11 +15,11 @@ use Filter::EOF;
 
 =head1 VERSION
 
-0.04
+0.05
 
 =cut
 
-$VERSION     = 0.04;
+$VERSION     = 0.05;
 $STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
@@ -70,11 +70,14 @@ By unimporting via C<no> you can tell C<namespace::clean> to start
 collecting functions for the next C<use namespace::clean;> specification.
 
 You can use the C<-except> flag to tell C<namespace::clean> that you
-don't want it to remove a certain function. A common use would be a 
-module exporting an C<import> method along with some functions:
+don't want it to remove a certain function or method. A common use would
+be a module exporting an C<import> method along with some functions:
 
   use ModuleExportingImport;
   use namespace::clean -except => [qw( import )];
+
+If you just want to C<-except> a single sub, you can pass it directly.
+For more than one value you have to use an array reference.
 
 =head1 METHODS
 
@@ -99,7 +102,12 @@ sub import {
     my $functions = $pragma->get_functions($cleanee);
     my $store     = $pragma->get_class_store($cleanee);
 
-    my %except    = map {( $_ => 1 )} @{ $args{ -except } || [] };
+    # except parameter can be array ref or single value
+    my %except = map {( $_ => 1 )} (
+        $args{ -except }
+        ? ( ref $args{ -except } eq 'ARRAY' ? @{ $args{ -except } } : $args{ -except } )
+        : ()
+    );
 
     # register symbols for removal, if they have a CODE entry
     for my $f (keys %$functions) {
@@ -206,7 +214,8 @@ This module works through the effect that a
 
 will remove the C<foo> symbol from C<$SomePackage> for run time lookups
 (e.g., method calls) but will leave the entry alive to be called by
-already resolved names in the package itself.
+already resolved names in the package itself. C<namespace::clean> will
+restore and therefor in effect keep all glob slots that aren't C<CODE>.
 
 A test file has been added to the perl core to ensure that this behaviour
 will be stable in future releases.

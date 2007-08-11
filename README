@@ -2,7 +2,7 @@ NAME
     namespace::clean - Keep imports and functions out of your namespace
 
 VERSION
-    0.04
+    0.05
 
 SYNOPSIS
       package Foo;
@@ -50,11 +50,14 @@ DESCRIPTION
     collecting functions for the next "use namespace::clean;" specification.
 
     You can use the "-except" flag to tell "namespace::clean" that you don't
-    want it to remove a certain function. A common use would be a module
-    exporting an "import" method along with some functions:
+    want it to remove a certain function or method. A common use would be a
+    module exporting an "import" method along with some functions:
 
       use ModuleExportingImport;
       use namespace::clean -except => [qw( import )];
+
+    If you just want to "-except" a single sub, you can pass it directly.
+    For more than one value you have to use an array reference.
 
 METHODS
     You shouldn't need to call any of these. Just "use" the package at the
@@ -88,7 +91,8 @@ IMPLEMENTATION DETAILS
 
     will remove the "foo" symbol from $SomePackage for run time lookups
     (e.g., method calls) but will leave the entry alive to be called by
-    already resolved names in the package itself.
+    already resolved names in the package itself. "namespace::clean" will
+    restore and therefor in effect keep all glob slots that aren't "CODE".
 
     A test file has been added to the perl core to ensure that this
     behaviour will be stable in future releases.

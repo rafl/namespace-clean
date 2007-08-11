@@ -1,4 +1,8 @@
 
+    [0.05] 
+        - Minor POD improvements
+        - -except now accepts a single value too
+
     [0.04] Sat Mar 17 16:22:10 CET 2007
         - Added -except flag
         - Non-CODE type slots will not be removed

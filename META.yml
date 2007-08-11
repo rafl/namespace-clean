@@ -5,7 +5,7 @@ build_requires:
   FindBin: 0
   Test::More: 0.62
 distribution_type: module
-generated_by: Module::Install version 0.65
+generated_by: Module::Install version 0.67
 license: perl
 meta-spec: 
   url: http://module-build.sourceforge.net/META-spec-v1.3.html
@@ -15,7 +15,12 @@ no_index:
   directory: 
     - inc
     - t
+provides: 
+  namespace::clean: 
+    file: lib/namespace/clean.pm
+    version: 0.05
 requires: 
   Filter::EOF: 0.02
   Symbol: 0
-version: 0.04
+tests: t/*.t t_author/*.t
+version: 0.05

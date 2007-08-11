@@ -1,7 +1,0 @@
-
-    General Todo's
-    -   Adding "use namespace::clean-start;" and "use namespace::clean-end;"
-    -   Adding "use namespace::clean 'remove_after_compiletime';" exporting 
-        that function allows module authors to do
-            "remove_after_compiletime($class, \@functions);"
-
