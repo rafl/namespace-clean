@@ -15,11 +15,11 @@ use Filter::EOF;
 
 =head1 VERSION
 
-0.05
+0.06
 
 =cut
 
-$VERSION     = 0.05;
+$VERSION     = 0.06;
 $STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
@@ -128,8 +128,10 @@ sub import {
                 no strict 'refs';
 
                 # keep original value to restore non-code slots
-                local *__tmp = *{ ${ "${cleanee}::" }{ $f } };
-                delete ${ "${cleanee}::" }{ $f };
+                {   no warnings 'uninitialized';    # fix possible unimports
+                    local *__tmp = *{ ${ "${cleanee}::" }{ $f } };
+                    delete ${ "${cleanee}::" }{ $f };
+                }
 
               SLOT:
                 # restore non-code slots to symbol
