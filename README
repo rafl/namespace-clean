@@ -2,7 +2,7 @@ NAME
     namespace::clean - Keep imports and functions out of your namespace
 
 VERSION
-    0.06
+    0.07
 
 SYNOPSIS
       package Foo;
@@ -59,14 +59,24 @@ DESCRIPTION
     If you just want to "-except" a single sub, you can pass it directly.
     For more than one value you have to use an array reference.
 
+  Moose
+    When using "namespace::clean" together with Moose you want to keep the
+    installed "meta" method. So your classes should look like:
+
+      package Foo;
+      use Moose;
+      use namespace::clean -except => 'meta';
+      ...
+
+    Same goes for Moose::Role.
+
 METHODS
     You shouldn't need to call any of these. Just "use" the package at the
     appropriate place.
 
   import
-    Makes a snapshot of the current defined functions and registers a
-    Filter::EOF cleanup routine to remove those symbols at the end of the
-    compile-time.
+    Makes a snapshot of the current defined functions and installs a
+    Scope::Guard in the current scope to invoke the cleanups.
 
   unimport
     This method will be called when you do a
@@ -101,7 +111,7 @@ IMPLEMENTATION DETAILS
     use "undef" instead.
 
 SEE ALSO
-    Filter::EOF
+    Scope::Guard
 
 AUTHOR AND COPYRIGHT
     Robert 'phaylon' Sedlacek "<rs@474.at>", with many thanks to Matt S

@@ -1,4 +1,8 @@
 
+    [0.07] Sun Mar  9 20:13:33 CET 2008
+        - Switched from Filter::EOF to a much saner implementation via
+          %^H and Scope::Guard. (mst & autobox)++ for this.
+
     [0.06] Wed Feb 20 15:09:00 CET 2008
         - Fixed 'uninitialized value in ref-to-glob cast' error
           if unimport was used before.

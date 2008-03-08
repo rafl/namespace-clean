@@ -9,18 +9,19 @@ namespace::clean - Keep imports and functions out of your namespace
 use warnings;
 use strict;
 
-use vars              qw( $VERSION $STORAGE_VAR );
-use Symbol            qw( qualify_to_ref );
-use Filter::EOF;
+use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY );
+use Symbol      qw( qualify_to_ref );
+use Scope::Guard;
 
 =head1 VERSION
 
-0.06
+0.07
 
 =cut
 
-$VERSION     = 0.06;
-$STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
+$VERSION        = 0.07;
+$STORAGE_VAR    = '__NAMESPACE_CLEAN_STORAGE';
+$SCOPE_HOOK_KEY = 'namespace_clean_SCOPING';
 
 =head1 SYNOPSIS
 
@@ -79,6 +80,18 @@ be a module exporting an C<import> method along with some functions:
 If you just want to C<-except> a single sub, you can pass it directly.
 For more than one value you have to use an array reference.
 
+=head2 Moose
+
+When using C<namespace::clean> together with L<Moose> you want to keep
+the installed C<meta> method. So your classes should look like:
+
+  package Foo;
+  use Moose;
+  use namespace::clean -except => 'meta';
+  ...
+
+Same goes for L<Moose::Role>.
+
 =head1 METHODS
 
 You shouldn't need to call any of these. Just C<use> the package at the
@@ -88,9 +101,8 @@ appropriate place.
 
 =head2 import
 
-Makes a snapshot of the current defined functions and registers a 
-L<Filter::EOF> cleanup routine to remove those symbols at the end 
-of the compile-time.
+Makes a snapshot of the current defined functions and installs a 
+L<Scope::Guard> in the current scope to invoke the cleanups.
 
 =cut
 
@@ -119,7 +131,8 @@ sub import {
 
     # register EOF handler on first call to import
     unless ($store->{handler_is_installed}) {
-        Filter::EOF->on_eof_call(sub {
+        $^H |= 0x120000;
+        $^H{ $SCOPE_HOOK_KEY } = Scope::Guard->new(sub {
           SYMBOL:
             for my $f (keys %{ $store->{remove} }) {
 
@@ -227,7 +240,7 @@ use C<undef> instead.
 
 =head1 SEE ALSO
 
-L<Filter::EOF>
+L<Scope::Guard>
 
 =head1 AUTHOR AND COPYRIGHT
 

@@ -10,7 +10,7 @@ use ExporterTest qw( foo bar );
 
 BEGIN { 
     ok( main->can('foo'), 'methods are there before cleanup' );
-    eval { use namespace::clean };
+    eval { require namespace::clean ;; namespace::clean->import };
     ok( !$@, 'module use ok' );
 }
 

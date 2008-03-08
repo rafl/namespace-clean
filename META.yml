@@ -18,9 +18,9 @@ no_index:
 provides: 
   namespace::clean: 
     file: lib/namespace/clean.pm
-    version: 0.06
+    version: 0.07
 requires: 
-  Filter::EOF: 0.02
+  Scope::Guard: 0.02
   Symbol: 0
 tests: t/*.t t_author/*.t
-version: 0.06
+version: 0.07
