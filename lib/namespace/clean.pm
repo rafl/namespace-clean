@@ -9,19 +9,20 @@ namespace::clean - Keep imports and functions out of your namespace
 use warnings;
 use strict;
 
-use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY );
+use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
 use Symbol      qw( qualify_to_ref );
 use Scope::Guard;
 
 =head1 VERSION
 
-0.07
+0.08
 
 =cut
 
-$VERSION        = 0.07;
-$STORAGE_VAR    = '__NAMESPACE_CLEAN_STORAGE';
-$SCOPE_HOOK_KEY = 'namespace_clean_SCOPING';
+$VERSION         = 0.08;
+$STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
+$SCOPE_HOOK_KEY  = 'namespace_clean_SCOPING';
+$SCOPE_EXPLICIT  = 'namespace_clean_EXPLICIT';
 
 =head1 SYNOPSIS
 
@@ -56,6 +57,8 @@ $SCOPE_HOOK_KEY = 'namespace_clean_SCOPING';
 
 =head1 DESCRIPTION
 
+=head2 Keeping packages clean
+
 When you define a function, or import one, into a Perl package, it will
 naturally also be available as a method. This does not per se cause
 problems, but it can complicate subclassing and, for example, plugin
@@ -79,6 +82,27 @@ be a module exporting an C<import> method along with some functions:
 
 If you just want to C<-except> a single sub, you can pass it directly.
 For more than one value you have to use an array reference.
+
+=head2 Explicitely removing functions when your scope is compiled
+
+It is also possible to explicitely tell C<namespace::clean> what packages
+to remove when the surrounding scope has finished compiling. Here is an
+example:
+
+  package Foo;
+  use strict;
+
+  # blessed NOT available
+
+  sub my_class {
+      use Scalar::Util qw( blessed );
+      use namespace::clean qw( blessed );
+
+      # blessed available
+      return blessed shift;
+  }
+
+  # blessed NOT available
 
 =head2 Moose
 
@@ -106,58 +130,81 @@ L<Scope::Guard> in the current scope to invoke the cleanups.
 
 =cut
 
+my $RemoveSubs = sub {
+    my $cleanee = shift;
+    my $store   = shift;
+  SYMBOL:
+    for my $f (@_) {
+
+        # ignore already removed symbols
+        next SYMBOL if $store->{exclude}{ $f };
+        no strict 'refs';
+
+        # keep original value to restore non-code slots
+        {   no warnings 'uninitialized';    # fix possible unimports
+            local *__tmp = *{ ${ "${cleanee}::" }{ $f } };
+            delete ${ "${cleanee}::" }{ $f };
+        }
+
+      SLOT:
+        # restore non-code slots to symbol
+        for my $t (qw( SCALAR ARRAY HASH IO FORMAT )) {
+            next SLOT unless defined *__tmp{ $t };
+            *{ "${cleanee}::$f" } = *__tmp{ $t };
+        }
+    }
+};
+
 sub import {
-    my ($pragma, %args) = @_;
+    my ($pragma, @args) = @_;
+    $^H |= 0x120000;
 
-    # calling class, all current functions and our storage
-    my $cleanee   = caller;
-    my $functions = $pragma->get_functions($cleanee);
-    my $store     = $pragma->get_class_store($cleanee);
-
-    # except parameter can be array ref or single value
-    my %except = map {( $_ => 1 )} (
-        $args{ -except }
-        ? ( ref $args{ -except } eq 'ARRAY' ? @{ $args{ -except } } : $args{ -except } )
-        : ()
-    );
-
-    # register symbols for removal, if they have a CODE entry
-    for my $f (keys %$functions) {
-        next if     $except{ $f };
-        next unless    $functions->{ $f } 
-                and *{ $functions->{ $f } }{CODE};
-        $store->{remove}{ $f } = 1;
+    my (%args, $is_explicit);
+    if (@args and $args[0] =~ /^\-/) {
+        %args = @args;
+        @args = ();
+    }
+    elsif (@args) {
+        $is_explicit++;
     }
 
-    # register EOF handler on first call to import
-    unless ($store->{handler_is_installed}) {
-        $^H |= 0x120000;
-        $^H{ $SCOPE_HOOK_KEY } = Scope::Guard->new(sub {
-          SYMBOL:
-            for my $f (keys %{ $store->{remove} }) {
-
-                # ignore already removed symbols
-                next SYMBOL if $store->{exclude}{ $f };
-                no strict 'refs';
-
-                # keep original value to restore non-code slots
-                {   no warnings 'uninitialized';    # fix possible unimports
-                    local *__tmp = *{ ${ "${cleanee}::" }{ $f } };
-                    delete ${ "${cleanee}::" }{ $f };
-                }
-
-              SLOT:
-                # restore non-code slots to symbol
-                for my $t (qw( SCALAR ARRAY HASH IO FORMAT )) {
-                    next SLOT unless defined *__tmp{ $t };
-                    *{ "${cleanee}::$f" } = *__tmp{ $t };
-                }
-            }
+    my $cleanee = caller;
+    if ($is_explicit) {
+        $^H{ $SCOPE_EXPLICIT } = Scope::Guard->new(sub {
+            $RemoveSubs->($cleanee, {}, @args);
         });
-        $store->{handler_is_installed} = 1;
     }
+    else {
 
-    return 1;
+        # calling class, all current functions and our storage
+        my $functions = $pragma->get_functions($cleanee);
+        my $store     = $pragma->get_class_store($cleanee);
+
+        # except parameter can be array ref or single value
+        my %except = map {( $_ => 1 )} (
+            $args{ -except }
+            ? ( ref $args{ -except } eq 'ARRAY' ? @{ $args{ -except } } : $args{ -except } )
+            : ()
+        );
+
+        # register symbols for removal, if they have a CODE entry
+        for my $f (keys %$functions) {
+            next if     $except{ $f };
+            next unless    $functions->{ $f } 
+                    and *{ $functions->{ $f } }{CODE};
+            $store->{remove}{ $f } = 1;
+        }
+
+        # register EOF handler on first call to import
+        unless ($store->{handler_is_installed}) {
+            $^H{ $SCOPE_HOOK_KEY } = Scope::Guard->new(sub {
+                $RemoveSubs->($cleanee, $store, keys %{ $store->{remove} });
+            });
+            $store->{handler_is_installed} = 1;
+        }
+
+        return 1;
+    }
 }
 
 =head2 unimport
@@ -254,4 +301,5 @@ it under the same terms as perl itself.
 
 =cut
 
-1;
+no warnings;
+'Danger! Laws of Thermodynamics may not apply.'

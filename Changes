@@ -1,4 +1,7 @@
 
+    [0.08] Sun Mar  9 22:01:01 CET 2008
+        - Added explicit cleanup behaviour
+
     [0.07] Sun Mar  9 20:13:33 CET 2008
         - Switched from Filter::EOF to a much saner implementation via
           %^H and Scope::Guard. (mst & autobox)++ for this.
