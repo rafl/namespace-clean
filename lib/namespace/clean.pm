@@ -11,7 +11,7 @@ use strict;
 
 use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
 use Symbol      qw( qualify_to_ref );
-use Scope::Guard;
+use B::Hooks::EndOfScope;
 
 =head1 VERSION
 
@@ -21,8 +21,6 @@ use Scope::Guard;
 
 $VERSION         = 0.08;
 $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
-$SCOPE_HOOK_KEY  = 'namespace_clean_SCOPING';
-$SCOPE_EXPLICIT  = 'namespace_clean_EXPLICIT';
 
 =head1 SYNOPSIS
 
@@ -157,7 +155,6 @@ my $RemoveSubs = sub {
 
 sub import {
     my ($pragma, @args) = @_;
-    $^H |= 0x120000;
 
     my (%args, $is_explicit);
     if (@args and $args[0] =~ /^\-/) {
@@ -170,9 +167,9 @@ sub import {
 
     my $cleanee = caller;
     if ($is_explicit) {
-        $^H{ $SCOPE_EXPLICIT } = Scope::Guard->new(sub {
+        on_scope_end {
             $RemoveSubs->($cleanee, {}, @args);
-        });
+        };
     }
     else {
 
@@ -197,9 +194,9 @@ sub import {
 
         # register EOF handler on first call to import
         unless ($store->{handler_is_installed}) {
-            $^H{ $SCOPE_HOOK_KEY } = Scope::Guard->new(sub {
+            on_scope_end {
                 $RemoveSubs->($cleanee, $store, keys %{ $store->{remove} });
-            });
+            };
             $store->{handler_is_installed} = 1;
         }
 
