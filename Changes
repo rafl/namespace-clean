@@ -1,4 +1,7 @@
 
+    [0.09] Wed Oct 22 17:48:49 CEST 2008
+        - Use B::Hooks::EndOfScope instead of %^H + Scope::Guard.
+
     [0.08] Sun Mar  9 22:01:01 CET 2008
         - Added explicit cleanup behaviour
 

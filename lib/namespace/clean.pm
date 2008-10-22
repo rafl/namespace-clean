@@ -19,7 +19,7 @@ use B::Hooks::EndOfScope;
 
 =cut
 
-$VERSION         = 0.08;
+$VERSION         = 0.09;
 $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
