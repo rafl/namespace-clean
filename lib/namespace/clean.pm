@@ -123,8 +123,8 @@ appropriate place.
 
 =head2 import
 
-Makes a snapshot of the current defined functions and installs a 
-L<Scope::Guard> in the current scope to invoke the cleanups.
+Makes a snapshot of the current defined functions and installs a
+L<B::Hooks::EndOfScope> hook in the current scope to invoke the cleanups.
 
 =cut
 
@@ -284,7 +284,7 @@ use C<undef> instead.
 
 =head1 SEE ALSO
 
-L<Scope::Guard>
+L<B::Hooks::EndOfScope>
 
 =head1 AUTHOR AND COPYRIGHT
 
