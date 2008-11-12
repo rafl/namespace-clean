@@ -15,7 +15,7 @@ use B::Hooks::EndOfScope;
 
 =head1 VERSION
 
-0.08
+0.09
 
 =cut
 
