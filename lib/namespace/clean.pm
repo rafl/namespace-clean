@@ -15,11 +15,11 @@ use B::Hooks::EndOfScope;
 
 =head1 VERSION
 
-0.09
+0.10
 
 =cut
 
-$VERSION         = 0.09;
+$VERSION         = 0.10;
 $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS

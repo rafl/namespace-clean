@@ -1,3 +1,6 @@
+    [0.10] Fri Feb 20 14:31:36 CET 2009
+        - Depend on B::Hooks::EndOfScope 0.07 to avoid segfaults and lost error
+          messages when something goes wrong.
 
     [0.09] Wed Oct 22 17:48:49 CEST 2008
         - Use B::Hooks::EndOfScope instead of %^H + Scope::Guard.
