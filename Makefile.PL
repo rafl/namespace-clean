@@ -6,7 +6,7 @@ use inc::Module::Install;
 
 name            q{namespace-clean};
 license         q{perl};
-author          q{Robert 'phaylon' Sedlacek <rs@474.at>};
+author          q{Robert 'phaylon'' Sedlacek <rs@474.at>};
 all_from        q{lib/namespace/clean.pm};
 
 build_requires  q{Test::More},                  '0.62';
