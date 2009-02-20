@@ -2,7 +2,7 @@ NAME
     namespace::clean - Keep imports and functions out of your namespace
 
 VERSION
-    0.08
+    0.10
 
 SYNOPSIS
       package Foo;
@@ -97,7 +97,7 @@ METHODS
 
   import
     Makes a snapshot of the current defined functions and installs a
-    Scope::Guard in the current scope to invoke the cleanups.
+    B::Hooks::EndOfScope hook in the current scope to invoke the cleanups.
 
   unimport
     This method will be called when you do a
@@ -132,7 +132,7 @@ IMPLEMENTATION DETAILS
     use "undef" instead.
 
 SEE ALSO
-    Scope::Guard
+    B::Hooks::EndOfScope
 
 AUTHOR AND COPYRIGHT
     Robert 'phaylon' Sedlacek "<rs@474.at>", with many thanks to Matt S
