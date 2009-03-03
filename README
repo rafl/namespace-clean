@@ -2,7 +2,7 @@ NAME
     namespace::clean - Keep imports and functions out of your namespace
 
 VERSION
-    0.10
+    0.11
 
 SYNOPSIS
       package Foo;
@@ -91,9 +91,40 @@ DESCRIPTION
 
     Same goes for Moose::Role.
 
+  Cleaning other packages
+    You can tell "namespace::clean" that you want to clean up another
+    package instead of the one importing. To do this you have to pass in the
+    "-cleanee" option like this:
+
+      package My::MooseX::namespace::clean;
+      use strict;
+
+      use namespace::clean (); # no cleanup, just load
+
+      sub import {
+          namespace::clean->import(
+            -cleanee => scalar(caller),
+            -except  => 'meta',
+          );
+      }
+
+    If you don't care about "namespace::clean"s discover-and-"-except"
+    logic, and just want to remove subroutines, try "clean_subroutines".
+
 METHODS
     You shouldn't need to call any of these. Just "use" the package at the
     appropriate place.
+
+  clean_subroutines
+    This exposes the actual subroutine-removal logic.
+
+      namespace::clean->clean_subroutines($cleanee, qw( subA subB ));
+
+    will remove "subA" and "subB" from $cleanee. Note that this will remove
+    the subroutines immediately and not wait for scope end. If you want to
+    have this effect at a specific time (e.g. "namespace::clean" acts on
+    scope compile end) it is your responsibility to make sure it runs at
+    that time.
 
   import
     Makes a snapshot of the current defined functions and installs a
