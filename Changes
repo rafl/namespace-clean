@@ -1,4 +1,4 @@
-    [0.11] ...
+    [0.11] Tue Mar  3 17:34:49 CET 2009
         - Added -cleanee option to specify the package to clean (Closes
           RT#41850).
         - Added n:c->clean_subroutines($cleanee, @subs).
