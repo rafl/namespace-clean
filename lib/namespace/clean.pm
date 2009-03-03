@@ -15,11 +15,11 @@ use B::Hooks::EndOfScope;
 
 =head1 VERSION
 
-0.10
+0.11
 
 =cut
 
-$VERSION         = '0.10';
+$VERSION         = '0.11';
 $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
@@ -114,6 +114,27 @@ the installed C<meta> method. So your classes should look like:
 
 Same goes for L<Moose::Role>.
 
+=head2 Cleaning other packages
+
+You can tell C<namespace::clean> that you want to clean up another package
+instead of the one importing. To do this you have to pass in the C<-cleanee>
+option like this:
+
+  package My::MooseX::namespace::clean;
+  use strict;
+
+  use namespace::clean (); # no cleanup, just load
+
+  sub import {
+      namespace::clean->import(
+        -cleanee => scalar(caller),
+        -except  => 'meta',
+      );
+  }
+
+If you don't care about C<namespace::clean>s discover-and-C<-except> logic, and
+just want to remove subroutines, try L</clean_subroutines>.
+
 =head1 METHODS
 
 You shouldn't need to call any of these. Just C<use> the package at the
@@ -121,14 +142,21 @@ appropriate place.
 
 =cut
 
-=head2 import
+=head2 clean_subroutines
 
-Makes a snapshot of the current defined functions and installs a
-L<B::Hooks::EndOfScope> hook in the current scope to invoke the cleanups.
+This exposes the actual subroutine-removal logic.
+
+  namespace::clean->clean_subroutines($cleanee, qw( subA subB ));
+
+will remove C<subA> and C<subB> from C<$cleanee>. Note that this will remove the
+subroutines B<immediately> and not wait for scope end. If you want to have this
+effect at a specific time (e.g. C<namespace::clean> acts on scope compile end)
+it is your responsibility to make sure it runs at that time.
 
 =cut
 
 my $RemoveSubs = sub {
+
     my $cleanee = shift;
     my $store   = shift;
   SYMBOL:
@@ -153,19 +181,38 @@ my $RemoveSubs = sub {
     }
 };
 
+sub clean_subroutines {
+    my ($nc, $cleanee, @subs) = @_;
+    $RemoveSubs->($cleanee, {}, @subs);
+}
+
+=head2 import
+
+Makes a snapshot of the current defined functions and installs a
+L<B::Hooks::EndOfScope> hook in the current scope to invoke the cleanups.
+
+=cut
+
 sub import {
     my ($pragma, @args) = @_;
 
     my (%args, $is_explicit);
-    if (@args and $args[0] =~ /^\-/) {
-        %args = @args;
-        @args = ();
-    }
-    elsif (@args) {
-        $is_explicit++;
+
+  ARG:
+    while (@args) {
+
+        if ($args[0] =~ /^\-/) {
+            my $key = shift @args;
+            my $value = shift @args;
+            $args{ $key } = $value;
+        }
+        else {
+            $is_explicit++;
+            last ARG;
+        }
     }
 
-    my $cleanee = caller;
+    my $cleanee = exists $args{ -cleanee } ? $args{ -cleanee } : scalar caller;
     if ($is_explicit) {
         on_scope_end {
             $RemoveSubs->($cleanee, {}, @args);
@@ -215,10 +262,10 @@ It will start a new section of code that defines functions to clean up.
 =cut
 
 sub unimport {
-    my ($pragma) = @_;
+    my ($pragma, %args) = @_;
 
     # the calling class, the current functions and our storage
-    my $cleanee   = caller;
+    my $cleanee   = exists $args{ -cleanee } ? $args{ -cleanee } : scalar caller;
     my $functions = $pragma->get_functions($cleanee);
     my $store     = $pragma->get_class_store($cleanee);
 
