@@ -166,15 +166,19 @@ my $RemoveSubs = sub {
         next SYMBOL if $store->{exclude}{ $f };
         no strict 'refs';
 
+        local *__tmp;
+
         # keep original value to restore non-code slots
         {   no warnings 'uninitialized';    # fix possible unimports
-            local *__tmp = *{ ${ "${cleanee}::" }{ $f } };
+            *__tmp = *{ ${ "${cleanee}::" }{ $f } };
             delete ${ "${cleanee}::" }{ $f };
         }
 
       SLOT:
-        # restore non-code slots to symbol
-        for my $t (qw( SCALAR ARRAY HASH IO FORMAT )) {
+        # restore non-code slots to symbol.
+        # omit the FORMAT slot, since perl erroneously puts it into the
+        # SCALAR slot of the new glob.
+        for my $t (qw( SCALAR ARRAY HASH IO )) {
             next SLOT unless defined *__tmp{ $t };
             *{ "${cleanee}::$f" } = *__tmp{ $t };
         }
@@ -311,6 +315,12 @@ sub get_functions {
         do   { no strict 'refs'; keys %{ "${class}::" } }   # symbol entries
     };
 }
+
+=head1 BUGS
+
+C<namespace::clean> will clobber any formats that have the same name as
+a deleted sub. This is due to a bug in perl that makes it impossible to
+re-assign the FORMAT ref into a new glob.
 
 =head1 IMPLEMENTATION DETAILS
 
