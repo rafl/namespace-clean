@@ -10,8 +10,10 @@ use warnings;
 use strict;
 
 use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
-use Symbol      qw( qualify_to_ref );
+use Symbol      qw( qualify_to_ref gensym );
 use B::Hooks::EndOfScope;
+use Sub::Identify qw(sub_fullname);
+use Sub::Name qw(subname);
 
 =head1 VERSION
 
@@ -161,10 +163,23 @@ my $RemoveSubs = sub {
     my $store   = shift;
   SYMBOL:
     for my $f (@_) {
+        my $fq = "${cleanee}::$f";
 
         # ignore already removed symbols
         next SYMBOL if $store->{exclude}{ $f };
         no strict 'refs';
+
+        # convince the Perl debugger to work
+        # it assumes that sub_fullname($sub) can always be used to find the CV again
+        # since we are deleting the glob where the subroutine was originally
+        # defined, that assumption no longer holds, so we need to move it
+        # elsewhere and point the CV's name to the new glob.
+        my $sub = \&$fq;
+        if ( sub_fullname($sub) eq $fq ) {
+            my $new_fq = "namespace::clean::deleted::$fq";
+            subname($new_fq, $sub);
+            *{$new_fq} = $sub;
+        }
 
         local *__tmp;
 
