@@ -169,33 +169,43 @@ my $RemoveSubs = sub {
         next SYMBOL if $store->{exclude}{ $f };
         no strict 'refs';
 
-        # convince the Perl debugger to work
-        # it assumes that sub_fullname($sub) can always be used to find the CV again
-        # since we are deleting the glob where the subroutine was originally
-        # defined, that assumption no longer holds, so we need to move it
-        # elsewhere and point the CV's name to the new glob.
-        my $sub = \&$fq;
-        if ( sub_fullname($sub) eq $fq ) {
-            my $new_fq = "namespace::clean::deleted::$fq";
-            subname($new_fq, $sub);
-            *{$new_fq} = $sub;
+        next SYMBOL unless exists ${ "${cleanee}::" }{ $f };
+
+        if (ref(\${ "${cleanee}::" }{ $f }) eq 'GLOB') {
+            # convince the Perl debugger to work
+            # it assumes that sub_fullname($sub) can always be used to find the CV again
+            # since we are deleting the glob where the subroutine was originally
+            # defined, that assumption no longer holds, so we need to move it
+            # elsewhere and point the CV's name to the new glob.
+            my $sub = \&$fq;
+            if ( sub_fullname($sub) eq $fq ) {
+                my $new_fq = "namespace::clean::deleted::$fq";
+                subname($new_fq, $sub);
+                *{$new_fq} = $sub;
+            }
+
+            local *__tmp;
+
+            # keep original value to restore non-code slots
+            {   no warnings 'uninitialized';    # fix possible unimports
+                *__tmp = *{ ${ "${cleanee}::" }{ $f } };
+                delete ${ "${cleanee}::" }{ $f };
+            }
+
+          SLOT:
+            # restore non-code slots to symbol.
+            # omit the FORMAT slot, since perl erroneously puts it into the
+            # SCALAR slot of the new glob.
+            for my $t (qw( SCALAR ARRAY HASH IO )) {
+                next SLOT unless defined *__tmp{ $t };
+                *{ "${cleanee}::$f" } = *__tmp{ $t };
+            }
         }
-
-        local *__tmp;
-
-        # keep original value to restore non-code slots
-        {   no warnings 'uninitialized';    # fix possible unimports
-            *__tmp = *{ ${ "${cleanee}::" }{ $f } };
+        else {
+            # A non-glob in the stash is assumed to stand for some kind
+            # of function.  So far they all do, but the core might change
+            # this some day.  Watch perl5-porters.
             delete ${ "${cleanee}::" }{ $f };
-        }
-
-      SLOT:
-        # restore non-code slots to symbol.
-        # omit the FORMAT slot, since perl erroneously puts it into the
-        # SCALAR slot of the new glob.
-        for my $t (qw( SCALAR ARRAY HASH IO )) {
-            next SLOT unless defined *__tmp{ $t };
-            *{ "${cleanee}::$f" } = *__tmp{ $t };
         }
     }
 };
