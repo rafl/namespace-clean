@@ -1,3 +1,9 @@
+    [0.12] Thu Jan 14 03:22:03 CET 2010
+        - Stop relying on stash entries always being upgraded into real GVs
+          (Zefram).
+        - Work around $DB::sub (Yuval Kogman).
+        - Fix restoring of non-code symbols when cleaning (Ben Morrows).
+
     [0.11] Tue Mar  3 17:34:49 CET 2009
         - Added -cleanee option to specify the package to clean (Closes
           RT#41850).
