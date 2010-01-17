@@ -1,7 +1,19 @@
 #!/usr/bin/perl -d
 
+use Test::More;
+
 BEGIN {
-    push @DB::typeahead, "c", "q";
+    # apparently we can't just skip_all with -d, because the debugger breaks at
+    # Test::Testers END block
+    if ($] <= 5.008008) {
+        pass;
+        done_testing;
+    }
+    else {
+        push @DB::typeahead, "c";
+    }
+
+    push @DB::typeahead, "q";
 
     # try to shut it up at least a little bit
     open my $out, ">", \my $out_buf;
@@ -24,11 +36,9 @@ BEGIN {
     }
 }
 
-use Test::More tests => 5;
-
 ok( !Foo->can("foo"), "foo cleaned up" );
 ok( !Foo->can("baz"), "baz cleaned up" );
 
 Foo->bar();
 
-pass();
+done_testing;
