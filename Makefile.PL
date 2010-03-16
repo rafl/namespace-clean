@@ -18,7 +18,6 @@ requires        q{Sub::Name},                   '0.04';
 requires        q{Sub::Identify},               '0.04';
 
 auto_provides;
-auto_install;
 
 if (-e 'MANIFEST.SKIP') {
 
