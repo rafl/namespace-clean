@@ -1,3 +1,7 @@
+    [0.14] Thu Mar 18 11:15:38 CET 2010
+        - Disable auto_install.
+        - Turn the error prone debugger test into an author test.
+
     [0.13] Sun Jan 17 02:40:48 CET 2010
         - Skip failing debugger tests on 5.8.8 and older.
 
