@@ -10,8 +10,8 @@ use warnings;
 use strict;
 
 use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
-use Symbol      qw( qualify_to_ref gensym );
 use B::Hooks::EndOfScope;
+use Stash::Manip;
 use Sub::Identify qw(sub_fullname);
 use Sub::Name qw(subname);
 
@@ -161,52 +161,31 @@ my $RemoveSubs = sub {
 
     my $cleanee = shift;
     my $store   = shift;
+    my $cleanee_stash = Stash::Manip->new($cleanee);
+    my $deleted_stash = Stash::Manip->new("namespace::clean::deleted::$cleanee");
   SYMBOL:
     for my $f (@_) {
-        my $fq = "${cleanee}::$f";
-
+        my $variable = "&$f";
         # ignore already removed symbols
         next SYMBOL if $store->{exclude}{ $f };
-        no strict 'refs';
 
-        next SYMBOL unless exists ${ "${cleanee}::" }{ $f };
+        next SYMBOL unless $cleanee_stash->has_package_symbol($variable);
 
-        if (ref(\${ "${cleanee}::" }{ $f }) eq 'GLOB') {
+        if (ref(\$cleanee_stash->namespace->{$f}) eq 'GLOB') {
             # convince the Perl debugger to work
             # it assumes that sub_fullname($sub) can always be used to find the CV again
             # since we are deleting the glob where the subroutine was originally
             # defined, that assumption no longer holds, so we need to move it
             # elsewhere and point the CV's name to the new glob.
-            my $sub = \&$fq;
-            if ( sub_fullname($sub) eq $fq ) {
-                my $new_fq = "namespace::clean::deleted::$fq";
+            my $sub = $cleanee_stash->get_package_symbol($variable);
+            if ( sub_fullname($sub) eq ($cleanee_stash->name . "::$f") ) {
+                my $new_fq = $deleted_stash->name . "::$f";
                 subname($new_fq, $sub);
-                *{$new_fq} = $sub;
-            }
-
-            local *__tmp;
-
-            # keep original value to restore non-code slots
-            {   no warnings 'uninitialized';    # fix possible unimports
-                *__tmp = *{ ${ "${cleanee}::" }{ $f } };
-                delete ${ "${cleanee}::" }{ $f };
-            }
-
-          SLOT:
-            # restore non-code slots to symbol.
-            # omit the FORMAT slot, since perl erroneously puts it into the
-            # SCALAR slot of the new glob.
-            for my $t (qw( SCALAR ARRAY HASH IO )) {
-                next SLOT unless defined *__tmp{ $t };
-                *{ "${cleanee}::$f" } = *__tmp{ $t };
+                $deleted_stash->add_package_symbol($variable, $sub);
             }
         }
-        else {
-            # A non-glob in the stash is assumed to stand for some kind
-            # of function.  So far they all do, but the core might change
-            # this some day.  Watch perl5-porters.
-            delete ${ "${cleanee}::" }{ $f };
-        }
+
+        $cleanee_stash->remove_package_symbol($variable);
     }
 };
 
@@ -252,6 +231,7 @@ sub import {
         # calling class, all current functions and our storage
         my $functions = $pragma->get_functions($cleanee);
         my $store     = $pragma->get_class_store($cleanee);
+        my $stash     = Stash::Manip->new($cleanee);
 
         # except parameter can be array ref or single value
         my %except = map {( $_ => 1 )} (
@@ -263,8 +243,7 @@ sub import {
         # register symbols for removal, if they have a CODE entry
         for my $f (keys %$functions) {
             next if     $except{ $f };
-            next unless    $functions->{ $f } 
-                    and *{ $functions->{ $f } }{CODE};
+            next unless $stash->has_package_symbol("&$f");
             $store->{remove}{ $f } = 1;
         }
 
@@ -317,8 +296,8 @@ information about function names included and excluded from removal.
 
 sub get_class_store {
     my ($pragma, $class) = @_;
-    no strict 'refs';
-    return \%{ "${class}::${STORAGE_VAR}" };
+    my $stash = Stash::Manip->new($class);
+    return $stash->get_package_symbol("%$STORAGE_VAR");
 }
 
 =head2 get_functions
@@ -332,12 +311,10 @@ reference to the symbol as value.
 sub get_functions {
     my ($pragma, $class) = @_;
 
+    my $stash = Stash::Manip->new($class);
     return {
-        map  { @$_ }                                        # key => value
-        grep { *{ $_->[1] }{CODE} }                         # only functions
-        map  { [$_, qualify_to_ref( $_, $class )] }         # get globref
-        grep { $_ !~ /::$/ }                                # no packages
-        do   { no strict 'refs'; keys %{ "${class}::" } }   # symbol entries
+        map { $_ => $stash->get_package_symbol("&$_") }
+            $stash->list_all_package_symbols('CODE')
     };
 }
 
