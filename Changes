@@ -1,3 +1,5 @@
+        - Use Stash::Manip for the stash manipulation bits (doy).
+
     [0.14] Thu Mar 18 11:15:38 CET 2010
         - Disable auto_install.
         - Turn the error prone debugger test into an author test.

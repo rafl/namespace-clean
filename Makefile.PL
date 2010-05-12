@@ -13,7 +13,7 @@ build_requires  q{Test::More},                  '0.88';
 build_requires  q{FindBin},                     0;
 
 requires        q{B::Hooks::EndOfScope},        '0.07';
-requires        q{Symbol},                      0;
+requires        q{Stash::Manip},                '0.01';
 requires        q{Sub::Name},                   '0.04';
 requires        q{Sub::Identify},               '0.04';
 
