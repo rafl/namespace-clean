@@ -11,7 +11,7 @@ use strict;
 
 use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
 use B::Hooks::EndOfScope;
-use Stash::Manip;
+use Package::Stash;
 use Sub::Identify qw(sub_fullname);
 use Sub::Name qw(subname);
 
@@ -161,8 +161,8 @@ my $RemoveSubs = sub {
 
     my $cleanee = shift;
     my $store   = shift;
-    my $cleanee_stash = Stash::Manip->new($cleanee);
-    my $deleted_stash = Stash::Manip->new("namespace::clean::deleted::$cleanee");
+    my $cleanee_stash = Package::Stash->new($cleanee);
+    my $deleted_stash = Package::Stash->new("namespace::clean::deleted::$cleanee");
   SYMBOL:
     for my $f (@_) {
         my $variable = "&$f";
@@ -231,7 +231,7 @@ sub import {
         # calling class, all current functions and our storage
         my $functions = $pragma->get_functions($cleanee);
         my $store     = $pragma->get_class_store($cleanee);
-        my $stash     = Stash::Manip->new($cleanee);
+        my $stash     = Package::Stash->new($cleanee);
 
         # except parameter can be array ref or single value
         my %except = map {( $_ => 1 )} (
@@ -296,7 +296,7 @@ information about function names included and excluded from removal.
 
 sub get_class_store {
     my ($pragma, $class) = @_;
-    my $stash = Stash::Manip->new($class);
+    my $stash = Package::Stash->new($class);
     return $stash->get_package_symbol("%$STORAGE_VAR");
 }
 
@@ -311,7 +311,7 @@ reference to the symbol as value.
 sub get_functions {
     my ($pragma, $class) = @_;
 
-    my $stash = Stash::Manip->new($class);
+    my $stash = Package::Stash->new($class);
     return {
         map { $_ => $stash->get_package_symbol("&$_") }
             $stash->list_all_package_symbols('CODE')
