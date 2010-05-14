@@ -21,7 +21,7 @@ use Sub::Name qw(subname);
 
 =cut
 
-$VERSION         = '0.14';
+$VERSION         = '0.15';
 $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
