@@ -8,7 +8,7 @@ use Test::More tests => 4;
 
 use ExporterTest qw( foo bar );
 
-BEGIN { 
+BEGIN {
     ok( main->can('foo'), 'methods are there before cleanup' );
     eval { require namespace::clean ;; namespace::clean->import };
     ok( !$@, 'module use ok' );

@@ -1,27 +1,15 @@
 package namespace::clean;
-
-=head1 NAME
-
-namespace::clean - Keep imports and functions out of your namespace
-
-=cut
+# ABSTRACT: Keep imports and functions out of your namespace
 
 use warnings;
 use strict;
 
-use vars        qw( $VERSION $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
-use B::Hooks::EndOfScope;
-use Package::Stash;
-use Sub::Identify qw(sub_fullname);
-use Sub::Name qw(subname);
+use vars qw( $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
+use Sub::Name 0.04 qw(subname);
+use Sub::Identify 0.04 qw(sub_fullname);
+use Package::Stash 0.03;
+use B::Hooks::EndOfScope 0.07;
 
-=head1 VERSION
-
-0.13
-
-=cut
-
-$VERSION         = '0.15';
 $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
@@ -62,7 +50,7 @@ $STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
 When you define a function, or import one, into a Perl package, it will
 naturally also be available as a method. This does not per se cause
 problems, but it can complicate subclassing and, for example, plugin
-classes that are included via multiple inheritance by loading them as 
+classes that are included via multiple inheritance by loading them as
 base classes.
 
 The C<namespace::clean> pragma will remove all previously declared or
@@ -137,14 +125,7 @@ option like this:
 If you don't care about C<namespace::clean>s discover-and-C<-except> logic, and
 just want to remove subroutines, try L</clean_subroutines>.
 
-=head1 METHODS
-
-You shouldn't need to call any of these. Just C<use> the package at the
-appropriate place.
-
-=cut
-
-=head2 clean_subroutines
+=method clean_subroutines
 
 This exposes the actual subroutine-removal logic.
 
@@ -194,7 +175,7 @@ sub clean_subroutines {
     $RemoveSubs->($cleanee, {}, @subs);
 }
 
-=head2 import
+=method import
 
 Makes a snapshot of the current defined functions and installs a
 L<B::Hooks::EndOfScope> hook in the current scope to invoke the cleanups.
@@ -259,7 +240,7 @@ sub import {
     }
 }
 
-=head2 unimport
+=method unimport
 
 This method will be called when you do a
 
@@ -287,9 +268,9 @@ sub unimport {
     return 1;
 }
 
-=head2 get_class_store
+=method get_class_store
 
-This returns a reference to a hash in a passed package containing 
+This returns a reference to a hash in a passed package containing
 information about function names included and excluded from removal.
 
 =cut
@@ -300,7 +281,7 @@ sub get_class_store {
     return $stash->get_package_symbol("%$STORAGE_VAR");
 }
 
-=head2 get_functions
+=method get_functions
 
 Takes a class as argument and returns all currently defined functions
 in it as a hash reference with the function name as key and a typeglob
@@ -318,15 +299,9 @@ sub get_functions {
     };
 }
 
-=head1 BUGS
-
-C<namespace::clean> will clobber any formats that have the same name as
-a deleted sub. This is due to a bug in perl that makes it impossible to
-re-assign the FORMAT ref into a new glob.
-
 =head1 IMPLEMENTATION DETAILS
 
-This module works through the effect that a 
+This module works through the effect that a
 
   delete $SomePackage::{foo};
 
@@ -345,15 +320,9 @@ use C<undef> instead.
 
 L<B::Hooks::EndOfScope>
 
-=head1 AUTHOR AND COPYRIGHT
+=head1 THANKS
 
-Robert 'phaylon' Sedlacek C<E<lt>rs@474.atE<gt>>, with many thanks to
-Matt S Trout for the inspiration on the whole idea.
-
-=head1 LICENSE
-
-This program is free software; you can redistribute it and/or modify 
-it under the same terms as perl itself.
+Many thanks to Matt S Trout for the inspiration on the whole idea.
 
 =cut
 

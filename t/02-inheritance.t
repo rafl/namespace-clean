@@ -21,7 +21,7 @@ ok( !Inheritance->can('foo'),
     'parent function not available in subclass' );
 ok( Inheritance->can('bar'),
     'parent method available in subclass' );
-is( Inheritance->bar, 23, 
+is( Inheritance->bar, 23,
     'parent method works in subclass' );
 is( Inheritance->qux, 23,
     'subclass method calls to parent work' );
