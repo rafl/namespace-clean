@@ -4,13 +4,13 @@ package namespace::clean;
 use warnings;
 use strict;
 
-use vars qw( $STORAGE_VAR $SCOPE_HOOK_KEY $SCOPE_EXPLICIT );
+use vars qw( $STORAGE_VAR );
 use Sub::Name 0.04 qw(subname);
 use Sub::Identify 0.04 qw(sub_fullname);
 use Package::Stash 0.03;
 use B::Hooks::EndOfScope 0.07;
 
-$STORAGE_VAR     = '__NAMESPACE_CLEAN_STORAGE';
+$STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
 
 =head1 SYNOPSIS
 
