@@ -1,3 +1,7 @@
+    [0.16]
+        - Release all changes of 0.15 as part of a stable release.
+        - Convert from Module::Install to Dist::Zilla.
+
     [0.15] TRIAL release
         - Use Package::Stash for the stash manipulation bits (doy).
 
