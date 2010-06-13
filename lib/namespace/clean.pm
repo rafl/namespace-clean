@@ -278,7 +278,10 @@ information about function names included and excluded from removal.
 sub get_class_store {
     my ($pragma, $class) = @_;
     my $stash = Package::Stash->new($class);
-    return $stash->get_package_symbol("%$STORAGE_VAR");
+    my $var = "%$STORAGE_VAR";
+    $stash->add_package_symbol($var, {})
+        unless $stash->has_package_symbol($var);
+    return $stash->get_package_symbol($var);
 }
 
 =method get_functions
