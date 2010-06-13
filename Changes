@@ -1,3 +1,7 @@
+    [0.18]
+        - Make sure we continue working on future Package::Stash
+          versions (doy).
+
     [0.17]
         - Make sure the debugger author test is skipped for
           non-authors before the debugger is even loaded.
