@@ -166,7 +166,14 @@ my $RemoveSubs = sub {
             }
         }
 
-        $cleanee_stash->remove_package_symbol($variable);
+        my ($scalar, $array, $hash, $io) = map {
+            $cleanee_stash->get_package_symbol($_ . $f)
+        } '$', '@', '%', '';
+        $cleanee_stash->remove_package_glob($f);
+        for my $var (['$', $scalar], ['@', $array], ['%', $hash], ['', $io]) {
+            next unless defined $var->[1];
+            $cleanee_stash->add_package_symbol($var->[0] . $f, $var->[1]);
+        }
     }
 };
 
