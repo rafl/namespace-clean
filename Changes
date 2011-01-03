@@ -1,3 +1,8 @@
+    [0.19]
+        - Port to the new Package::Stash 0.18 API and depend on it.
+        - Don't rely on package::stash's remove_package_symbol implementation
+          (doy).
+
     [0.18]
         - Make sure we continue working on future Package::Stash
           versions (doy).
