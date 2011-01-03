@@ -7,26 +7,8 @@ use strict;
 use vars qw( $STORAGE_VAR );
 use Sub::Name 0.04 qw(subname);
 use Sub::Identify 0.04 qw(sub_fullname);
-use Package::Stash 0.03;
+use Package::Stash 0.18;
 use B::Hooks::EndOfScope 0.07;
-
-my ($ADD_SYMBOL, $HAS_SYMBOL, $GET_SYMBOL, $LIST_ALL_SYMBOLS, $REMOVE_GLOB);
-BEGIN {
-    if ($Package::Stash::VERSION > 0.13) {
-        $ADD_SYMBOL = 'add_symbol';
-        $HAS_SYMBOL = 'has_symbol';
-        $GET_SYMBOL = 'get_symbol';
-        $LIST_ALL_SYMBOLS = 'list_all_symbols';
-        $REMOVE_GLOB = 'remove_glob';
-    }
-    else {
-        $ADD_SYMBOL = 'add_package_symbol';
-        $HAS_SYMBOL = 'has_package_symbol';
-        $GET_SYMBOL = 'get_package_symbol';
-        $LIST_ALL_SYMBOLS = 'list_all_package_symbols';
-        $REMOVE_GLOB = 'remove_package_glob';
-    }
-}
 
 $STORAGE_VAR = '__NAMESPACE_CLEAN_STORAGE';
 
@@ -168,7 +150,7 @@ my $RemoveSubs = sub {
         # ignore already removed symbols
         next SYMBOL if $store->{exclude}{ $f };
 
-        next SYMBOL unless $cleanee_stash->$HAS_SYMBOL($variable);
+        next SYMBOL unless $cleanee_stash->has_symbol($variable);
 
         if (ref(\$cleanee_stash->namespace->{$f}) eq 'GLOB') {
             # convince the Perl debugger to work
@@ -176,21 +158,21 @@ my $RemoveSubs = sub {
             # since we are deleting the glob where the subroutine was originally
             # defined, that assumption no longer holds, so we need to move it
             # elsewhere and point the CV's name to the new glob.
-            my $sub = $cleanee_stash->$GET_SYMBOL($variable);
+            my $sub = $cleanee_stash->get_symbol($variable);
             if ( sub_fullname($sub) eq ($cleanee_stash->name . "::$f") ) {
                 my $new_fq = $deleted_stash->name . "::$f";
                 subname($new_fq, $sub);
-                $deleted_stash->$ADD_SYMBOL($variable, $sub);
+                $deleted_stash->add_symbol($variable, $sub);
             }
         }
 
         my ($scalar, $array, $hash, $io) = map {
-            $cleanee_stash->$GET_SYMBOL($_ . $f)
+            $cleanee_stash->get_symbol($_ . $f)
         } '$', '@', '%', '';
-        $cleanee_stash->$REMOVE_GLOB($f);
+        $cleanee_stash->remove_glob($f);
         for my $var (['$', $scalar], ['@', $array], ['%', $hash], ['', $io]) {
             next unless defined $var->[1];
-            $cleanee_stash->$ADD_SYMBOL($var->[0] . $f, $var->[1]);
+            $cleanee_stash->add_symbol($var->[0] . $f, $var->[1]);
         }
     }
 };
@@ -249,7 +231,7 @@ sub import {
         # register symbols for removal, if they have a CODE entry
         for my $f (keys %$functions) {
             next if     $except{ $f };
-            next unless $stash->$HAS_SYMBOL("&$f");
+            next unless $stash->has_symbol("&$f");
             $store->{remove}{ $f } = 1;
         }
 
@@ -304,9 +286,9 @@ sub get_class_store {
     my ($pragma, $class) = @_;
     my $stash = Package::Stash->new($class);
     my $var = "%$STORAGE_VAR";
-    $stash->$ADD_SYMBOL($var, {})
-        unless $stash->$HAS_SYMBOL($var);
-    return $stash->$GET_SYMBOL($var);
+    $stash->add_symbol($var, {})
+        unless $stash->has_symbol($var);
+    return $stash->get_symbol($var);
 }
 
 =method get_functions
@@ -322,8 +304,8 @@ sub get_functions {
 
     my $stash = Package::Stash->new($class);
     return {
-        map { $_ => $stash->$GET_SYMBOL("&$_") }
-            $stash->$LIST_ALL_SYMBOLS('CODE')
+        map { $_ => $stash->get_symbol("&$_") }
+            $stash->list_all_symbols('CODE')
     };
 }
 
