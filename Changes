@@ -1,3 +1,7 @@
+    [0.20]
+        - Bump Package::Stash dependency to 0.22 to pull in a bugfix in
+          Package::Stash::XS 0.19.
+
     [0.19]
         - Port to the new Package::Stash 0.18 API and depend on it.
         - Don't rely on package::stash's remove_package_symbol implementation
